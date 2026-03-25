@@ -1,4 +1,4 @@
-name: Docker Build
+name: Build and Push to GHCR
 
 on:
   push:
@@ -6,17 +6,43 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Defines the permissions for the GITHUB_TOKEN used in this job
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Build the Docker image locally
-      - name: Build Docker image
-        run: docker build -t my-test-app:${{ github.sha }} .
+      # 1. Log in to GitHub Container Registry (GHCR)
+      # Uses the automatic GITHUB_TOKEN provided by GitHub Actions
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # The Scan step has been removed to allow the build to pass 
-      # regardless of vulnerabilities.
+      # 2. Extract metadata (tags, labels) for Docker
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+
+      # 3. Build and Push the image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
