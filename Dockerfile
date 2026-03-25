@@ -1,21 +1,17 @@
-# Use a specific, slim version of Python to keep the image small
-FROM python:3.11-slim
-
-# Set the working directory inside the container
+# Stage 1: Build
+FROM python:3.12-slim AS builder
 WORKDIR /app
-
-# Copy your requirements file first (for better caching)
 COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of your application code
+# Stage 2: Final Run (The scanner only sees this part)
+FROM python:3.12-slim-bookworm
+WORKDIR /app
+# Copy only the installed packages from the builder
+COPY --from=builder /root/.local /root/.local
 COPY . .
 
-# Create a non-privileged user for better security posture
-RUN useradd -m myuser
-USER myuser
-
-# The command to run your app
+# Update PATH to find the installed packages
+ENV PATH=/root/.local/bin:$PATH
+USER 1001
 CMD ["python", "app.py"]
