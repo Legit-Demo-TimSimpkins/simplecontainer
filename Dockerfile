@@ -4,9 +4,16 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-# Stage 2: Final Run (The scanner only sees this part)
+# Stage 2: Final Run
 FROM python:3.12-slim-bookworm
 WORKDIR /app
+
+# --- TEST SECRET FOR LEGIT SECURITY ---
+# Adding a fake AWS Access Key to trigger a "Secret in Code" finding
+ENV AWS_ACCESS_KEY_ID="AKIAIMNO789ABCDEF012"
+ENV DATABASE_PASSWORD="super-secret-password-123"
+# ---------------------------------------
+
 # Copy only the installed packages from the builder
 COPY --from=builder /root/.local /root/.local
 COPY . .
