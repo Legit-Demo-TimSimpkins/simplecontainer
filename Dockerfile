@@ -14,6 +14,10 @@ ENV AWS_ACCESS_KEY_ID="AKIAIMNO789ABCDEF012"
 ENV DATABASE_PASSWORD="super-secret-password-123"
 # ---------------------------------------
 
+# 2. Set an environment variable with a fake secret to test Secret Scanning
+ENV DB_PASSWORD="SuperSecretPassword123!"
+ENV AWS_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
+
 # Copy only the installed packages from the builder
 COPY --from=builder /root/.local /root/.local
 COPY . .
